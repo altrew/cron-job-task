@@ -1,0 +1,10 @@
+{
+  "name": "cron-job-task",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": "./cli.js",
+  "author": "Andrew Collins",
+  "license": "MIT",
+  "type": "module"
+}
