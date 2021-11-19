@@ -4,11 +4,16 @@ Here is my submission for the cron job parser.
 
 ## How to run
 
+1. Install Node.js @ 16. (reference `.nvmrc`).
+1. `npm install`. (optional: as there are currently no dependencies)
+
 If running locally:
 `./cli.js "*/15 0 1,15 * 1-5 /usr/bin/find"`
 
 If running as a dependency:
 `cron-job-task "*/15 0 1,15 * 1-5 /usr/bin/find"`
+
+(note: please make sure the cron string is wrapped in quotes so that `process.argv` understands it as one section and does not break it up).
 
 ## How its built
 
