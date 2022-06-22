@@ -12,13 +12,23 @@ export const parse = (deconstructedCron) => {
       continue;
     }
 
-    const newExport =
-      parseAll(key, val) ||
-      parseSteps(key, val) ||
-      parseRange(key, val) ||
-      parseList(key, val);
+    // split the values by potential commas
+    const splitValues = val.split(",");
 
-    if (!newExport) throw new Error(`could not parse ${val} for ${key}`);
+    const newExport = [];
+
+    for (const nestedValue of splitValues) {
+      const nestedParse =
+        parseAll(key, nestedValue) ||
+        parseSteps(key, nestedValue) ||
+        parseRange(key, nestedValue) ||
+        parseList(key, nestedValue);
+
+      if (!nestedParse)
+        throw new Error(`could not parse ${nestedValue} for ${key}`);
+
+      newExport.push(...nestedParse);
+    }
 
     cronExport[key] = newExport;
   }
@@ -28,24 +38,41 @@ export const parse = (deconstructedCron) => {
 
 // */n
 // todo: matches for non standard m/n (not required in spec)
-const stepRegex = /\*\/(\d+)/;
+const stepRegex = /((\d+)-?(\d+)?|\*)\/(\d+)/;
 const parseSteps = (unit, stepString) => {
   const match = stepString?.match(stepRegex);
 
   if (!match) return false;
 
-  const [, repeatTimes] = match;
+  let [, , matchMin, matchMax, repeatTimes] = match;
+
+  if (matchMin === "*") matchMin = 0;
+
   const [min, max] = maxMinUnits[unit];
+
+  if (matchMin < min)
+    throw new Error(
+      `Steps Failed: on ${unit}, min match cannot be less than unit.`
+    );
+  if (matchMax > max)
+    throw new Error(
+      `Steps Failed: on ${unit}, max match cannot be greater than unit.`
+    );
 
   if (repeatTimes > max)
     throw new Error(`Steps Failed: on ${unit} cannot be greater than ${max}`);
   if (repeatTimes < min)
     throw new Error(`Steps Failed: on ${unit} cannot be less than ${min}`);
 
-  const amountOfUnits = max - min;
-  const times = Math.floor(amountOfUnits / repeatTimes) + 1;
+  const maxMinusValue = matchMax !== undefined ? max - +matchMax : 0;
 
-  return Array.from({ length: times }, (_, index) => min + index * repeatTimes);
+  const amountOfUnits = max - min - +matchMin - maxMinusValue;
+  const times = Math.floor(+amountOfUnits / +repeatTimes) + 1;
+
+  return Array.from(
+    { length: times },
+    (_, index) => +matchMin + min + index * +repeatTimes
+  );
 };
 
 // n-n
